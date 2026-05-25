@@ -1714,6 +1714,12 @@ export async function runAgentTurnWithFallback(params: {
       const runLane = CommandLane.Main;
       let queuedUserMessagePersistedAcrossFallback = false;
       let assistantErrorPersistedAcrossFallback = false;
+      const notifyUserMessagePersisted = async (
+        message: Parameters<NonNullable<GetReplyOptions["onUserMessagePersisted"]>>[0],
+      ) => {
+        queuedUserMessagePersistedAcrossFallback = true;
+        await params.opts?.onUserMessagePersisted?.(message);
+      };
       const fallbackResult = await runWithModelFallback<EmbeddedAgentRunResult>({
         ...resolveModelFallbackOptions(effectiveRun, runtimeConfig),
         runId,
@@ -1876,9 +1882,7 @@ export async function runAgentTurnWithFallback(params: {
                   ? { message: params.followupRun.userMessageForPersistence }
                   : { text: params.transcriptCommandBody ?? params.commandBody },
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
-                onUserMessagePersisted: () => {
-                  queuedUserMessagePersistedAcrossFallback = true;
-                },
+                onUserMessagePersisted: notifyUserMessagePersisted,
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
                 inputProvenance: params.followupRun.run.inputProvenance,
@@ -2001,9 +2005,7 @@ export async function runAgentTurnWithFallback(params: {
                   params.followupRun.run.sourceReplyDeliveryMode === "message_tool_only",
                 silentReplyPromptMode: params.followupRun.run.silentReplyPromptMode,
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
-                onUserMessagePersisted: () => {
-                  queuedUserMessagePersistedAcrossFallback = true;
-                },
+                onUserMessagePersisted: notifyUserMessagePersisted,
                 suppressTranscriptOnlyAssistantPersistence:
                   params.followupRun.run.suppressTranscriptOnlyAssistantPersistence,
                 suppressAssistantErrorPersistence: suppressAssistantErrorPersistenceForCandidate,
