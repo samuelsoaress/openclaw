@@ -31,6 +31,10 @@ import {
   isSubagentSessionKey,
   normalizeMainKey,
 } from "../../routing/session-key.js";
+import {
+  buildPersistedUserTurnMediaInputsFromFields,
+  buildPersistedUserTurnMessage,
+} from "../../sessions/user-turn-transcript.js";
 import { createLazyImportLoader } from "../../shared/lazy-promise.js";
 import type { SilentReplyConversationType } from "../../shared/silent-reply-policy.js";
 import { normalizeOptionalString } from "../../shared/string-coerce.js";
@@ -1083,9 +1087,18 @@ export async function runPreparedReply(
     inboundEventKind === "room_event"
       ? (internalOpts?.queuedFollowupAbortSignal ?? opts?.abortSignal)
       : undefined;
+  const userTurnMediaForPersistence = buildPersistedUserTurnMediaInputsFromFields(ctx);
+  const userMessageForPersistence =
+    userTurnMediaForPersistence.length > 0
+      ? buildPersistedUserTurnMessage({
+          text: baseBodyTrimmedRaw,
+          media: userTurnMediaForPersistence,
+        })
+      : undefined;
   const followupRun = {
     prompt: queuedBody,
     transcriptPrompt: transcriptCommandBody,
+    ...(userMessageForPersistence ? { userMessageForPersistence } : {}),
     currentInboundEventKind: inboundEventKind,
     currentInboundContext,
     ...(queuedFollowupAbortSignal ? { abortSignal: queuedFollowupAbortSignal } : {}),

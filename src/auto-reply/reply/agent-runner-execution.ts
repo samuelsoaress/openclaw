@@ -1985,6 +1985,7 @@ export async function runAgentTurnWithFallback(params: {
                 sandboxSessionKey: params.runtimePolicySessionKey,
                 prompt: params.commandBody,
                 transcriptPrompt: params.transcriptCommandBody,
+                userMessageForPersistence: params.followupRun.userMessageForPersistence,
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
                 extraSystemPrompt: params.followupRun.run.extraSystemPrompt,
