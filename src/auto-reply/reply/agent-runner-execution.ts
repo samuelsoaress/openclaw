@@ -62,7 +62,6 @@ import { CommandLaneClearedError, GatewayDrainingError } from "../../process/com
 import { CommandLane } from "../../process/lanes.js";
 import { defaultRuntime } from "../../runtime.js";
 import { shouldPreserveUserFacingSessionStateForInputProvenance } from "../../sessions/input-provenance.js";
-import { tryPersistInlineUserTurnTranscript } from "../../sessions/user-turn-transcript.js";
 import {
   hasNonEmptyString,
   normalizeLowercaseStringOrEmpty,
@@ -1873,6 +1872,13 @@ export async function runAgentTurnWithFallback(params: {
                 config: runtimeConfig,
                 prompt: params.commandBody,
                 transcriptPrompt: params.transcriptCommandBody,
+                userTurnTranscript: params.followupRun.userMessageForPersistence
+                  ? { message: params.followupRun.userMessageForPersistence }
+                  : { text: params.transcriptCommandBody ?? params.commandBody },
+                suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
+                onUserMessagePersisted: () => {
+                  queuedUserMessagePersistedAcrossFallback = true;
+                },
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
                 inputProvenance: params.followupRun.run.inputProvenance,
@@ -1924,25 +1930,6 @@ export async function runAgentTurnWithFallback(params: {
                     })()
                   : rawResult,
             });
-            if (!suppressQueuedUserPersistenceForCandidate) {
-              const persistedUserTurn = await tryPersistInlineUserTurnTranscript({
-                ...(params.followupRun.userMessageForPersistence
-                  ? { message: params.followupRun.userMessageForPersistence }
-                  : { text: params.transcriptCommandBody ?? params.commandBody }),
-                sessionId: params.followupRun.run.sessionId,
-                sessionKey: params.sessionKey ?? params.followupRun.run.sessionId,
-                sessionEntry: params.getActiveSessionEntry(),
-                ...(params.activeSessionStore ? { sessionStore: params.activeSessionStore } : {}),
-                ...(params.storePath ? { storePath: params.storePath } : {}),
-                agentId: params.followupRun.run.agentId,
-                cwd: params.followupRun.run.workspaceDir,
-                config: runtimeConfig,
-                errorContext: "CLI user turn transcript",
-              });
-              if (persistedUserTurn) {
-                queuedUserMessagePersistedAcrossFallback = true;
-              }
-            }
             bootstrapPromptWarningSignaturesSeen = resolveBootstrapWarningSignaturesSeen(
               result.meta?.systemPromptReport,
             );
