@@ -2017,6 +2017,7 @@ export async function runAgentTurnWithFallback(params: {
                 silentReplyPromptMode: params.followupRun.run.silentReplyPromptMode,
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
                 onUserMessagePersisted: notifyUserMessagePersisted,
+                onUserMessagePersistencePending: params.opts?.onUserMessagePersistencePending,
                 suppressTranscriptOnlyAssistantPersistence:
                   params.followupRun.run.suppressTranscriptOnlyAssistantPersistence,
                 suppressAssistantErrorPersistence: suppressAssistantErrorPersistenceForCandidate,
