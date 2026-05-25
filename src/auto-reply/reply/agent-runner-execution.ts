@@ -62,7 +62,7 @@ import { CommandLaneClearedError, GatewayDrainingError } from "../../process/com
 import { CommandLane } from "../../process/lanes.js";
 import { defaultRuntime } from "../../runtime.js";
 import { shouldPreserveUserFacingSessionStateForInputProvenance } from "../../sessions/input-provenance.js";
-import { persistUserTurnTranscript } from "../../sessions/user-turn-transcript.js";
+import { tryPersistInlineUserTurnTranscript } from "../../sessions/user-turn-transcript.js";
 import {
   hasNonEmptyString,
   normalizeLowercaseStringOrEmpty,
@@ -1925,31 +1925,22 @@ export async function runAgentTurnWithFallback(params: {
                   : rawResult,
             });
             if (!suppressQueuedUserPersistenceForCandidate) {
-              try {
-                const persistedUserTurn = await persistUserTurnTranscript({
-                  ...(params.followupRun.userMessageForPersistence
-                    ? { message: params.followupRun.userMessageForPersistence }
-                    : {
-                        input: {
-                          text: params.transcriptCommandBody ?? params.commandBody,
-                          timestamp: Date.now(),
-                        },
-                      }),
-                  sessionId: params.followupRun.run.sessionId,
-                  sessionKey: params.sessionKey ?? params.followupRun.run.sessionId,
-                  sessionEntry: params.getActiveSessionEntry(),
-                  ...(params.activeSessionStore ? { sessionStore: params.activeSessionStore } : {}),
-                  ...(params.storePath ? { storePath: params.storePath } : {}),
-                  agentId: params.followupRun.run.agentId,
-                  cwd: params.followupRun.run.workspaceDir,
-                  config: runtimeConfig,
-                  updateMode: "inline",
-                });
-                if (persistedUserTurn) {
-                  queuedUserMessagePersistedAcrossFallback = true;
-                }
-              } catch (error) {
-                logVerbose(`failed to persist CLI user turn transcript: ${String(error)}`);
+              const persistedUserTurn = await tryPersistInlineUserTurnTranscript({
+                ...(params.followupRun.userMessageForPersistence
+                  ? { message: params.followupRun.userMessageForPersistence }
+                  : { text: params.transcriptCommandBody ?? params.commandBody }),
+                sessionId: params.followupRun.run.sessionId,
+                sessionKey: params.sessionKey ?? params.followupRun.run.sessionId,
+                sessionEntry: params.getActiveSessionEntry(),
+                ...(params.activeSessionStore ? { sessionStore: params.activeSessionStore } : {}),
+                ...(params.storePath ? { storePath: params.storePath } : {}),
+                agentId: params.followupRun.run.agentId,
+                cwd: params.followupRun.run.workspaceDir,
+                config: runtimeConfig,
+                errorContext: "CLI user turn transcript",
+              });
+              if (persistedUserTurn) {
+                queuedUserMessagePersistedAcrossFallback = true;
               }
             }
             bootstrapPromptWarningSignaturesSeen = resolveBootstrapWarningSignaturesSeen(
