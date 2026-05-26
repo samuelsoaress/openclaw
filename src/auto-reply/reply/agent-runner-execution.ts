@@ -1877,9 +1877,6 @@ export async function runAgentTurnWithFallback(params: {
                 config: runtimeConfig,
                 prompt: params.commandBody,
                 transcriptPrompt: params.transcriptCommandBody,
-                userTurnTranscript: userTurnTranscriptRecorder?.message
-                  ? { message: userTurnTranscriptRecorder.message }
-                  : { text: params.transcriptCommandBody ?? params.commandBody },
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
                 userTurnTranscriptRecorder,
                 onUserMessagePersisted: notifyUserMessagePersisted,
