@@ -1322,7 +1322,7 @@ export async function dispatchReplyFromConfig(
     params.replyOptions?.sourceReplyDeliveryMode === "message_tool_only" ||
     ctx.InboundEventKind === "room_event" ||
     (params.replyOptions?.sourceReplyDeliveryMode === undefined &&
-      !isExplicitSourceReplyCommand(ctx) &&
+      !isExplicitSourceReplyCommand(ctx, cfg) &&
       effectiveVisibleReplies === "message_tool");
   const runtimeProfileAlsoAllow = prefersMessageToolDelivery ? ["message"] : [];
   const profilePolicy = mergeAlsoAllowPolicy(resolveToolProfilePolicy(profile), [

@@ -2,6 +2,7 @@ import { normalizeChatType } from "../../channels/chat-type.js";
 import type { InboundEventKind } from "../../channels/inbound-event/kind.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import type { SessionSendPolicyDecision } from "../../sessions/send-policy.js";
+import { isControlCommandMessage } from "../command-detection.js";
 import {
   isExplicitCommandTurn,
   resolveCommandTurnContext,
@@ -18,8 +19,22 @@ export type SourceReplyDeliveryModeContext = {
   CommandTurn?: CommandTurnContext;
 };
 
-export function isExplicitSourceReplyCommand(ctx: SourceReplyDeliveryModeContext): boolean {
-  return isExplicitCommandTurn(resolveCommandTurnContext(ctx));
+export function isExplicitSourceReplyCommand(
+  ctx: SourceReplyDeliveryModeContext,
+  cfg?: OpenClawConfig,
+): boolean {
+  if (isExplicitCommandTurn(resolveCommandTurnContext(ctx))) {
+    return true;
+  }
+  // Channels that mark a turn authorized for a body that is itself a configured control
+  // command (e.g. `/new`, `/reset`) get the explicit-command source-reply bypass even if
+  // they did not tag CommandSource: "text". This keeps acknowledgement replies visible
+  // under message_tool_only delivery (e.g. Codex harness DMs) without requiring every
+  // channel ingress to repeat the same authorized-control-command formula. See #86664.
+  if (ctx.CommandAuthorized === true && isControlCommandMessage(ctx.CommandBody, cfg)) {
+    return true;
+  }
+  return false;
 }
 
 function isUnauthorizedTextSlashCommand(ctx: SourceReplyDeliveryModeContext): boolean {
@@ -51,7 +66,7 @@ export function resolveSourceReplyDeliveryMode(params: {
   ) {
     return params.requested;
   }
-  if (isExplicitSourceReplyCommand(params.ctx)) {
+  if (isExplicitSourceReplyCommand(params.ctx, params.cfg)) {
     return "automatic";
   }
   const chatType = normalizeChatType(params.ctx.ChatType);

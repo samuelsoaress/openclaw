@@ -133,6 +133,36 @@ describe("resolveSourceReplyDeliveryMode", () => {
     ).toBe("automatic");
   });
 
+  it("treats authorized control-command bodies as explicit replies even when CommandSource is missing", () => {
+    // Regression for #86664: channel ingresses that mark CommandAuthorized for a typed
+    // control command (e.g. `/reset`, `/new`) but never tag CommandSource: "text" should
+    // still bypass message_tool_only suppression so their acknowledgements stay visible
+    // under Codex-harness-style DM defaults.
+    expect(
+      resolveSourceReplyDeliveryMode({
+        cfg: globalToolOnlyReplyConfig,
+        ctx: {
+          ChatType: "direct",
+          CommandAuthorized: true,
+          CommandBody: "/reset",
+        },
+      }),
+    ).toBe("automatic");
+    // Inline command tokens within ordinary text do not get the bypass even when the
+    // channel marked the turn authorized — only bodies that are themselves a configured
+    // control command qualify.
+    expect(
+      resolveSourceReplyDeliveryMode({
+        cfg: globalToolOnlyReplyConfig,
+        ctx: {
+          ChatType: "direct",
+          CommandAuthorized: true,
+          CommandBody: "hey can you /status please",
+        },
+      }),
+    ).toBe("message_tool_only");
+  });
+
   it("keeps unauthorized text slash command turns tool-only under the default group mode", () => {
     expect(
       resolveSourceReplyDeliveryMode({
