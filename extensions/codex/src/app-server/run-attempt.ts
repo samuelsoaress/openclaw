@@ -5869,7 +5869,7 @@ async function mirrorPromptAtTurnStartBestEffort(params: {
         });
       }
     })();
-    params.params.onUserMessagePersistencePending?.(mirrorPromise);
+    params.params.userTurnTranscriptRecorder?.markRuntimePersistencePending(mirrorPromise);
     await mirrorPromise;
   } catch (error) {
     embeddedAgentLog.warn("failed to mirror codex app-server prompt at turn start", { error });
