@@ -1718,6 +1718,7 @@ export async function runAgentTurnWithFallback(params: {
         message: Parameters<NonNullable<GetReplyOptions["onUserMessagePersisted"]>>[0],
       ) => {
         queuedUserMessagePersistedAcrossFallback = true;
+        params.opts?.userTurnTranscriptRecorder?.markRuntimePersisted(message);
         try {
           const notification = params.opts?.onUserMessagePersisted?.(message);
           if (notification) {
@@ -1730,6 +1731,10 @@ export async function runAgentTurnWithFallback(params: {
         } catch (error) {
           logVerbose(`user message persistence notification failed: ${formatErrorMessage(error)}`);
         }
+      };
+      const notifyUserMessagePersistencePending = (pending: Promise<void>) => {
+        params.opts?.userTurnTranscriptRecorder?.markRuntimePersistencePending(pending);
+        params.opts?.onUserMessagePersistencePending?.(pending);
       };
       const fallbackResult = await runWithModelFallback<EmbeddedAgentRunResult>({
         ...resolveModelFallbackOptions(effectiveRun, runtimeConfig),
@@ -2017,7 +2022,7 @@ export async function runAgentTurnWithFallback(params: {
                 silentReplyPromptMode: params.followupRun.run.silentReplyPromptMode,
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
                 onUserMessagePersisted: notifyUserMessagePersisted,
-                onUserMessagePersistencePending: params.opts?.onUserMessagePersistencePending,
+                onUserMessagePersistencePending: notifyUserMessagePersistencePending,
                 suppressTranscriptOnlyAssistantPersistence:
                   params.followupRun.run.suppressTranscriptOnlyAssistantPersistence,
                 suppressAssistantErrorPersistence: suppressAssistantErrorPersistenceForCandidate,
