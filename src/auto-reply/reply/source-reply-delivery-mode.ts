@@ -26,11 +26,7 @@ export function isExplicitSourceReplyCommand(
   if (isExplicitCommandTurn(resolveCommandTurnContext(ctx))) {
     return true;
   }
-  // Channels that mark a turn authorized for a body that is itself a configured control
-  // command (e.g. `/new`, `/reset`) get the explicit-command source-reply bypass even if
-  // they did not tag CommandSource: "text". This keeps acknowledgement replies visible
-  // under message_tool_only delivery (e.g. Codex harness DMs) without requiring every
-  // channel ingress to repeat the same authorized-control-command formula. See #86664.
+  // Older channel ingresses may authorize text control commands without tagging CommandSource.
   if (ctx.CommandAuthorized === true && isControlCommandMessage(ctx.CommandBody, cfg)) {
     return true;
   }
