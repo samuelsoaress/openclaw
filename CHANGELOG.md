@@ -18,6 +18,7 @@ Docs: https://docs.openclaw.ai
 - Migrate: import supported Hermes, OpenCode, and Codex auth credentials into OpenClaw auth profiles when credential migration is selected, with explicit opt-out and non-interactive controls. (#85667) Thanks @fuller-stack-dev.
 - iOS: improve Talk mode with direct realtime voice sessions, compact toolbar status, and responsive voice waveform feedback. (#86355) Thanks @ngutman.
 - Media: replace the Sharp image backend with Photon for metadata, resizing, EXIF orientation, and PNG alpha-preserving optimization so OpenClaw no longer installs Sharp or the WhatsApp Jimp fallback for image processing. (#86437)
+- WhatsApp: remove the legacy send-level approval reaction hint upgrader so reaction approval prompts must come from the native/shared approval renderers. (NOT_IN_SPEC)
 
 ### Fixes
 
