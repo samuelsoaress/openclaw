@@ -309,6 +309,31 @@ export const TOOL_DISPLAY_CONFIG: ToolDisplayConfig = {
       title: "Session History",
       detailKeys: ["sessionKey", "limit", "includeTools"],
     },
+    transcripts: {
+      emoji: "🧾",
+      title: "Transcripts",
+      actions: {
+        start: {
+          label: "start",
+          detailKeys: ["sessionId", "title", "providerId", "meetingUrl", "channelId"],
+        },
+        stop: {
+          label: "stop",
+          detailKeys: ["sessionId"],
+        },
+        import: {
+          label: "import",
+          detailKeys: ["sessionId", "title", "providerId"],
+        },
+        summarize: {
+          label: "summarize",
+          detailKeys: ["sessionId"],
+        },
+        status: {
+          label: "status",
+        },
+      },
+    },
     sessions_spawn: {
       emoji: "🧑‍🔧",
       title: "Sub-agent",
