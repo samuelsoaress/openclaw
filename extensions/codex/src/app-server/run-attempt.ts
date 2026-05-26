@@ -197,6 +197,7 @@ import {
 import {
   attachCodexMirrorIdentity,
   buildCodexUserPromptMessage,
+  buildResolvedCodexUserPromptMessage,
   mirrorCodexAppServerTranscript,
 } from "./transcript-mirror.js";
 import { createCodexUserInputBridge } from "./user-input-bridge.js";
@@ -5851,7 +5852,7 @@ async function mirrorPromptAtTurnStartBestEffort(params: {
   try {
     const mirrorPromise = (async () => {
       const userPromptMessage = attachCodexMirrorIdentity(
-        buildCodexUserPromptMessage(params.params),
+        await buildResolvedCodexUserPromptMessage(params.params),
         `${params.turnId}:prompt`,
       );
       const mirrorResult = await mirrorCodexAppServerTranscript({
