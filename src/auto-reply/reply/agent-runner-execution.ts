@@ -1714,6 +1714,8 @@ export async function runAgentTurnWithFallback(params: {
       const runLane = CommandLane.Main;
       let queuedUserMessagePersistedAcrossFallback = false;
       let assistantErrorPersistedAcrossFallback = false;
+      const userTurnTranscriptRecorder =
+        params.followupRun.userTurnTranscriptRecorder ?? params.opts?.userTurnTranscriptRecorder;
       const notifyUserMessagePersisted = () => {
         queuedUserMessagePersistedAcrossFallback = true;
       };
@@ -1875,11 +1877,11 @@ export async function runAgentTurnWithFallback(params: {
                 config: runtimeConfig,
                 prompt: params.commandBody,
                 transcriptPrompt: params.transcriptCommandBody,
-                userTurnTranscript: params.followupRun.userMessageForPersistence
-                  ? { message: params.followupRun.userMessageForPersistence }
+                userTurnTranscript: userTurnTranscriptRecorder?.message
+                  ? { message: userTurnTranscriptRecorder.message }
                   : { text: params.transcriptCommandBody ?? params.commandBody },
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
-                userTurnTranscriptRecorder: params.opts?.userTurnTranscriptRecorder,
+                userTurnTranscriptRecorder,
                 onUserMessagePersisted: notifyUserMessagePersisted,
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
@@ -1994,8 +1996,7 @@ export async function runAgentTurnWithFallback(params: {
                 sandboxSessionKey: params.runtimePolicySessionKey,
                 prompt: params.commandBody,
                 transcriptPrompt: params.transcriptCommandBody,
-                userMessageForPersistence: params.followupRun.userMessageForPersistence,
-                userTurnTranscriptRecorder: params.opts?.userTurnTranscriptRecorder,
+                userTurnTranscriptRecorder,
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
                 extraSystemPrompt: params.followupRun.run.extraSystemPrompt,

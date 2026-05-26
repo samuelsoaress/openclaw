@@ -926,7 +926,7 @@ describe("runPreparedReply media-only handling", () => {
         mimeType: "image/png",
       },
     ]);
-    expect(call.followupRun.userMessageForPersistence).toMatchObject({
+    expect(call.followupRun.userTurnTranscriptRecorder?.message).toMatchObject({
       role: "user",
       content: "describe this",
       MediaPath: imagePath,
@@ -981,7 +981,7 @@ describe("runPreparedReply media-only handling", () => {
 
     expect(result).toEqual({ text: "ok" });
     const call = requireRunReplyAgentCall();
-    expect(call.followupRun.userMessageForPersistence).toMatchObject({
+    expect(call.followupRun.userTurnTranscriptRecorder?.message).toMatchObject({
       role: "user",
       content: "describe this",
       MediaPath: imagePath,
@@ -1032,7 +1032,7 @@ describe("runPreparedReply media-only handling", () => {
     );
 
     const call = requireRunReplyAgentCall();
-    expect(call.followupRun.userMessageForPersistence).toMatchObject({
+    expect(call.followupRun.userTurnTranscriptRecorder?.message).toMatchObject({
       role: "user",
       content: "What is in this image?",
       MediaPath: imagePath,
@@ -1040,7 +1040,7 @@ describe("runPreparedReply media-only handling", () => {
       MediaType: "image/png",
       MediaTypes: ["image/png"],
     });
-    const persistedContent = call.followupRun.userMessageForPersistence?.content;
+    const persistedContent = call.followupRun.userTurnTranscriptRecorder?.message?.content;
     expect(persistedContent).toBe("What is in this image?");
     expect(persistedContent).not.toContain("media attached");
     expect(persistedContent).not.toContain("message tool");
@@ -1086,7 +1086,7 @@ describe("runPreparedReply media-only handling", () => {
     );
 
     const call = requireRunReplyAgentCall();
-    expect(call.followupRun.userMessageForPersistence).toMatchObject({
+    expect(call.followupRun.userTurnTranscriptRecorder?.message).toMatchObject({
       role: "user",
       content: "[User sent media without caption]",
       MediaPath: imagePath,
@@ -1122,7 +1122,7 @@ describe("runPreparedReply media-only handling", () => {
     );
 
     const call = requireRunReplyAgentCall();
-    expect(call.followupRun.userMessageForPersistence).toBeUndefined();
+    expect(call.followupRun.userTurnTranscriptRecorder?.message).toBeUndefined();
   });
 
   it("does not rehydrate current MediaPaths after image understanding enriched the prompt", async () => {
