@@ -2013,6 +2013,7 @@ export async function runAgentTurnWithFallback(params: {
                 prompt: params.commandBody,
                 transcriptPrompt: params.transcriptCommandBody,
                 userMessageForPersistence: params.followupRun.userMessageForPersistence,
+                userTurnTranscriptRecorder: params.opts?.userTurnTranscriptRecorder,
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
                 extraSystemPrompt: params.followupRun.run.extraSystemPrompt,
