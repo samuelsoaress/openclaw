@@ -1718,7 +1718,6 @@ export async function runAgentTurnWithFallback(params: {
         message: Parameters<NonNullable<GetReplyOptions["onUserMessagePersisted"]>>[0],
       ) => {
         queuedUserMessagePersistedAcrossFallback = true;
-        params.opts?.userTurnTranscriptRecorder?.markRuntimePersisted(message);
         try {
           const notification = params.opts?.onUserMessagePersisted?.(message);
           if (notification) {
@@ -1733,7 +1732,6 @@ export async function runAgentTurnWithFallback(params: {
         }
       };
       const notifyUserMessagePersistencePending = (pending: Promise<void>) => {
-        params.opts?.userTurnTranscriptRecorder?.markRuntimePersistencePending(pending);
         params.opts?.onUserMessagePersistencePending?.(pending);
       };
       const fallbackResult = await runWithModelFallback<EmbeddedAgentRunResult>({
@@ -1898,6 +1896,7 @@ export async function runAgentTurnWithFallback(params: {
                   ? { message: params.followupRun.userMessageForPersistence }
                   : { text: params.transcriptCommandBody ?? params.commandBody },
                 suppressNextUserMessagePersistence: suppressQueuedUserPersistenceForCandidate,
+                userTurnTranscriptRecorder: params.opts?.userTurnTranscriptRecorder,
                 onUserMessagePersisted: notifyUserMessagePersisted,
                 currentInboundEventKind: params.followupRun.currentInboundEventKind,
                 currentInboundContext: params.followupRun.currentInboundContext,
