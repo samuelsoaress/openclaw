@@ -109,6 +109,7 @@ export function registerCronAddCommand(cron: Command) {
       .option("--model <model>", "Model override for agent jobs (provider/model or alias)")
       .option("--timeout-seconds <n>", "Timeout seconds for agent jobs")
       .option("--light-context", "Use lightweight bootstrap context for agent jobs", false)
+      .option("--overlap-policy <policy>", "Overlap policy (allow|skip|queue)")
       .option("--tools <list>", "Tool allow-list (e.g. exec,read,write or exec read write)")
       .option("--announce", "Fallback-deliver final text to a chat", false)
       .option("--deliver", "Deprecated (use --announce). Fallback-delivers final text to a chat.")
@@ -253,6 +254,7 @@ export function registerCronAddCommand(cron: Command) {
             description,
             enabled: !opts.disabled,
             deleteAfterRun: opts.deleteAfterRun ? true : opts.keepAfterRun ? false : undefined,
+            overlapPolicy: typeof opts.overlapPolicy === "string" ? opts.overlapPolicy : undefined,
             agentId,
             sessionKey,
             schedule,

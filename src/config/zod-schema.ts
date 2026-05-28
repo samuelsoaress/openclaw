@@ -749,6 +749,9 @@ export const OpenClawSchema = z
         enabled: z.boolean().optional(),
         store: z.string().optional(),
         maxConcurrentRuns: z.number().int().positive().optional(),
+        overlapPolicy: z.enum(["allow", "skip", "queue"]).optional(),
+        maxQueueDepth: z.number().int().positive().max(20).optional(),
+        maxQueueAgeMs: z.number().int().positive().optional(),
         retry: z
           .object({
             maxAttempts: z.number().int().min(0).max(10).optional(),

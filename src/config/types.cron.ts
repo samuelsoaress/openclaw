@@ -32,6 +32,12 @@ export type CronConfig = {
   enabled?: boolean;
   store?: string;
   maxConcurrentRuns?: number;
+  /** Default overlap policy for cron jobs: allow (default), skip, or queue. */
+  overlapPolicy?: "allow" | "skip" | "queue";
+  /** Max deferred ticks before a queued job is skipped (default: 3). */
+  maxQueueDepth?: number;
+  /** Max age in ms for a deferred job before it is skipped (default: 1800000 = 30min). */
+  maxQueueAgeMs?: number;
   /** Override default retry policy for one-shot jobs on transient errors. */
   retry?: CronRetryConfig;
   /**

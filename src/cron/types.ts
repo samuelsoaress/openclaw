@@ -18,6 +18,8 @@ export type CronSchedule =
 export type CronSessionTarget = "main" | "isolated" | "current" | `session:${string}`;
 export type CronWakeMode = "next-heartbeat" | "now";
 
+export type CronOverlapPolicy = "allow" | "skip" | "queue";
+
 export type CronMessageChannel = ChannelId;
 
 export type CronDeliveryMode = "none" | "announce" | "webhook";
@@ -217,6 +219,8 @@ export type CronJobState = {
   consecutiveErrors?: number;
   /** Number of consecutive skipped executions (reset on success or error). */
   consecutiveSkipped?: number;
+  /** Number of consecutive deferred ticks for queue policy (reset on success). */
+  consecutiveDeferred?: number;
   /** Last failure alert timestamp (ms since epoch) for cooldown gating. */
   lastFailureAlertAtMs?: number;
   /** Number of consecutive schedule computation errors. Auto-disables job after threshold. */
@@ -243,6 +247,7 @@ export type CronJob = CronJobBase<
   CronDelivery,
   CronFailureAlert | false
 > & {
+  overlapPolicy?: CronOverlapPolicy;
   state: CronJobState;
 };
 

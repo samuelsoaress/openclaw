@@ -514,6 +514,20 @@ export function normalizeCronJobInput(
     }
   }
 
+  if ("overlapPolicy" in base) {
+    const raw = base.overlapPolicy;
+    if (typeof raw === "string") {
+      const lower = raw.trim().toLowerCase();
+      if (lower === "allow" || lower === "skip" || lower === "queue") {
+        next.overlapPolicy = lower;
+      } else {
+        delete next.overlapPolicy;
+      }
+    } else {
+      delete next.overlapPolicy;
+    }
+  }
+
   if (isRecord(base.schedule)) {
     next.schedule = coerceSchedule(base.schedule);
   } else if (!isRecord(next.schedule)) {

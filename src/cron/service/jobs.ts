@@ -710,6 +710,7 @@ export function createJob(state: CronServiceState, input: CronJobCreate): CronJo
     schedule,
     sessionTarget: input.sessionTarget,
     wakeMode: input.wakeMode,
+    overlapPolicy: input.overlapPolicy,
     payload: input.payload,
     delivery: resolveInitialCronDelivery(input),
     failureAlert: input.failureAlert,
@@ -741,6 +742,9 @@ export function applyJobPatch(
   }
   if (typeof patch.deleteAfterRun === "boolean") {
     job.deleteAfterRun = patch.deleteAfterRun;
+  }
+  if ("overlapPolicy" in patch) {
+    job.overlapPolicy = patch.overlapPolicy;
   }
   if (patch.schedule) {
     if (patch.schedule.kind === "cron") {

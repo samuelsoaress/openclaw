@@ -98,6 +98,7 @@ export function registerCronEditCommand(cron: Command) {
       .option("--timeout-seconds <n>", "Timeout seconds for agent jobs")
       .option("--light-context", "Enable lightweight bootstrap context for agent jobs")
       .option("--no-light-context", "Disable lightweight bootstrap context for agent jobs")
+      .option("--overlap-policy <policy>", "Overlap policy (allow|skip|queue)")
       .option("--tools <list>", "Tool allow-list (e.g. exec,read,write or exec read write)")
       .option("--clear-tools", "Remove tool allow-list (use all tools)", false)
       .option("--announce", "Fallback-deliver final text to a chat")
@@ -182,6 +183,9 @@ export function registerCronEditCommand(cron: Command) {
           }
           if (opts.keepAfterRun) {
             patch.deleteAfterRun = false;
+          }
+          if (typeof opts.overlapPolicy === "string") {
+            (patch as Record<string, unknown>).overlapPolicy = opts.overlapPolicy;
           }
           if (typeof opts.session === "string") {
             patch.sessionTarget = sessionTarget;

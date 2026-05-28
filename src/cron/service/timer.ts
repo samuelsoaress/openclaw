@@ -23,9 +23,14 @@ import {
 } from "../../tasks/detached-task-runtime.js";
 import { deliveryContextFromSession } from "../../utils/delivery-context.shared.js";
 import type { DeliveryContext } from "../../utils/delivery-context.types.js";
-import { clearCronJobActive, markCronJobActive } from "../active-jobs.js";
+import { clearCronJobActive, isCronJobActive, markCronJobActive } from "../active-jobs.js";
 import { resolveCronDeliveryPlan, resolveFailureDestination } from "../delivery-plan.js";
 import { resolveCronAgentSessionKey } from "../isolated-agent/session-key.js";
+import {
+  resolveCronMaxQueueAgeMs,
+  resolveCronMaxQueueDepth,
+  resolveCronOverlapPolicy,
+} from "../overlap-policy.js";
 import { resolveCronExecutionRetryHint } from "../retry-hint.js";
 import {
   createCronRunDiagnosticsFromError,
@@ -1235,14 +1240,84 @@ export async function onTimer(state: CronServiceState) {
         return [];
       }
 
-      const now = state.deps.nowMs();
+      // Apply overlap policies: skip jobs that are already active (skip policy),
+      // defer jobs that exceed concurrency (queue policy with backpressure).
+      const cronConfig = state.deps.cronConfig;
+      const concurrencyLimit = resolveRunConcurrency(state);
+      const maxQueueDepth = resolveCronMaxQueueDepth(cronConfig);
+      const maxQueueAgeMs = resolveCronMaxQueueAgeMs(cronConfig);
+      const toRun: typeof due = [];
+
       for (const job of due) {
+        const policy = resolveCronOverlapPolicy(job, cronConfig);
+
+        // Skip policy: if this job is already active, skip it gracefully.
+        if (policy === "skip" && isCronJobActive(job.id)) {
+          state.deps.log.info(`cron: skipping "${job.name}" (overlap policy: already running)`);
+          job.state.lastRunStatus = "skipped";
+          job.state.lastError = "skipped: overlap policy (job already running)";
+          job.state.consecutiveSkipped = (job.state.consecutiveSkipped ?? 0) + 1;
+          job.state.consecutiveDeferred = 0;
+          job.state.nextRunAtMs = computeJobNextRunAtMs(job, dueCheckNow) ?? undefined;
+          emit(state, { jobId: job.id, action: "finished", job, result: { status: "skipped" } });
+          continue;
+        }
+
+        // Queue policy: if concurrency limit is full, defer to next tick.
+        if (policy === "queue" && toRun.length >= concurrencyLimit) {
+          const deferCount = (job.state.consecutiveDeferred ?? 0) + 1;
+          const queueAgeMs =
+            typeof job.state.nextRunAtMs === "number" ? dueCheckNow - job.state.nextRunAtMs : 0;
+
+          // Backpressure: skip if deferred too many times or too old.
+          if (deferCount > maxQueueDepth) {
+            state.deps.log.warn(
+              `cron: queue depth exceeded for "${job.name}" (${deferCount}/${maxQueueDepth}), skipping`,
+            );
+            job.state.lastRunStatus = "skipped";
+            job.state.lastError = `skipped: queue depth exceeded (${deferCount}/${maxQueueDepth})`;
+            job.state.consecutiveDeferred = 0;
+            job.state.consecutiveSkipped = (job.state.consecutiveSkipped ?? 0) + 1;
+            job.state.nextRunAtMs = computeJobNextRunAtMs(job, dueCheckNow) ?? undefined;
+            emit(state, { jobId: job.id, action: "finished", job, result: { status: "skipped" } });
+            continue;
+          }
+          if (queueAgeMs > maxQueueAgeMs) {
+            state.deps.log.warn(
+              `cron: queue age exceeded for "${job.name}" (${Math.round(queueAgeMs / 1000)}s > ${Math.round(maxQueueAgeMs / 1000)}s), skipping`,
+            );
+            job.state.lastRunStatus = "skipped";
+            job.state.lastError = `skipped: queue age exceeded (${Math.round(queueAgeMs / 1000)}s)`;
+            job.state.consecutiveDeferred = 0;
+            job.state.consecutiveSkipped = (job.state.consecutiveSkipped ?? 0) + 1;
+            job.state.nextRunAtMs = computeJobNextRunAtMs(job, dueCheckNow) ?? undefined;
+            emit(state, { jobId: job.id, action: "finished", job, result: { status: "skipped" } });
+            continue;
+          }
+
+          // Defer: keep nextRunAtMs unchanged, increment deferred counter.
+          // The next timer tick will re-evaluate when a slot opens.
+          if (deferCount === maxQueueDepth) {
+            state.deps.log.warn(
+              `cron: queue backpressure for "${job.name}" (${deferCount}/${maxQueueDepth} deferred). Consider increasing maxConcurrentRuns or reducing frequency.`,
+            );
+          }
+          job.state.consecutiveDeferred = deferCount;
+          continue;
+        }
+
+        toRun.push(job);
+      }
+
+      const now = state.deps.nowMs();
+      for (const job of toRun) {
         job.state.runningAtMs = now;
         job.state.lastError = undefined;
+        job.state.consecutiveDeferred = 0;
       }
       await persist(state);
 
-      return due.map((j) => ({
+      return toRun.map((j) => ({
         id: j.id,
         job: j,
       }));
